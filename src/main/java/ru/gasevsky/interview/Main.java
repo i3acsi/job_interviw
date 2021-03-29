@@ -47,8 +47,9 @@ public class Main {
             });
         }
 
-        LinkedList<List<Integer>> dif = new LinkedList<>();
+        TreeMap<Integer, LinkedList<Object[]>> dif = new TreeMap<>();
 
+        Object[] left = null;
         Integer k1 = null, v1 = null, k2, v2;
         for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
             k2 = entry.getKey();
@@ -57,40 +58,97 @@ public class Main {
                 int dx = k2 - k1;
                 if (dx > dxMax)
                     dxMax = dx;
-                List<Integer> node = new ArrayList<>();
-                node.add(dx);
-                node.add(v1);
-                node.add(v2);
-                dif.add(node);
+                Object[] node = new Object[5];
+                node[0] = dx;
+                node[1] = v1;
+                node[2] = v2;
+                node[3] = left;
+                node[4] = null;
+                if (left != null)
+                    left[4] = node;
+                left = node;
+                dif.compute(dx, (key, val) -> {
+                    if (val == null)
+                        val = new LinkedList<>();
+                    val.add(node);
+                    return val;
+                });
             }
             k1 = k2;
             v1 = v2;
         }
 
         while (nk[0] > 0) {
-            int indexMin = dif.indexOf(Collections.min(dif, Comparator.comparing(l -> (Integer) l.get(0))));
-            List<Integer> entry = dif.get(indexMin);
-            List<Integer> left = indexMin == 0 ? null : dif.get(indexMin - 1);
-            List<Integer> right = indexMin == dif.size() - 1 ? null : dif.get(indexMin + 1);
-            if ((left == null && right != null) || (left != null && right != null && right.get(0) < left.get(0))) {
-                int dx = (entry.get(0)) + (right.get(0));
-                int l = entry.get(1);
+            LinkedList<Object[]> minDxEntry = dif.entrySet().stream().findFirst().get().getValue();
+            Object[] entry = minDxEntry.removeFirst();
+            if (minDxEntry.isEmpty())
+                dif.remove((int) entry[0]);
+            Object[] leftEntry = entry[3] == null ? null : (Object[]) entry[3];
+            Object[] rightEntry = entry[4] == null ? null : (Object[]) entry[4];
+            if ((leftEntry == null && rightEntry != null) || (leftEntry != null && rightEntry != null && (int) rightEntry[0] < (int) leftEntry[0])) {
+                LinkedList<Object[]> list = dif.get((int) rightEntry[0]);
+                list.remove(rightEntry);
+                if (list.isEmpty())
+                    dif.remove((int) rightEntry[0]);
+
+                int dx = ((int) entry[0]) + ((int) rightEntry[0]);
                 if (dx > dxMax)
                     dxMax = dx;
-                stations.add(String.valueOf((int) entry.get(2)));
-                right.set(0, dx);
-                right.set(1, l);
-                dif.remove(indexMin);
+                Object[] node = new Object[5]; // создаем новую запись
+                node[0] = dx;
+                node[1] = entry[1];
+                node[2] = rightEntry[2];
+                node[3] = entry[3];
+                node[4] = rightEntry[4];
+
+                if (entry[3] != null) { // переписываем ссылки слева и справа на новую ноду
+                    ((Object[]) entry[3])[4] = node;
+                }
+                if (rightEntry[4] != null) { // переписываем ссылки слева и справа на новую ноду
+                    ((Object[]) rightEntry[4])[3] = node;
+                }
+
+
+                dif.compute(dx, (key, val) -> {
+                    if (val == null)
+                        val = new LinkedList<>();
+                    val.add(node);
+                    return val;
+                });
+
+                stations.add(String.valueOf((int) entry[2]));
                 nk[0]--;
-            } else if ((right == null && left != null) || (left != null && right != null && left.get(0) < right.get(0))) {
-                int dx = (entry.get(0)) + (left.get(0));
-                int r = entry.get(2);
+            } else if ((rightEntry == null && leftEntry != null) || (leftEntry != null && rightEntry != null && (int) leftEntry[0] < (int) rightEntry[0])) {
+                LinkedList<Object[]> list = dif.get((int) leftEntry[0]);
+                list.remove(leftEntry);
+                if (list.isEmpty())
+                    dif.remove((int) leftEntry[0]);
+
+                int dx = ((int) entry[0]) + ((int) leftEntry[0]);
                 if (dx > dxMax)
                     dxMax = dx;
-                stations.add(String.valueOf((int) entry.get(1)));
-                left.set(0, dx);
-                left.set(2, r);
-                dif.remove(indexMin);
+                Object[] node = new Object[5]; // создаем новую запись
+                node[0] = dx;
+                node[1] = leftEntry[1];
+                node[2] = entry[2];
+                node[3] = leftEntry[3];
+                node[4] = entry[4];
+
+                if (entry[4] != null) { // переписываем ссылки слева и справа на новую ноду
+                    ((Object[]) entry[4])[3] = node;
+                }
+                if (leftEntry[3] != null) { // переписываем ссылки слева и справа на новую ноду
+                    ((Object[]) leftEntry[3])[4] = node;
+                }
+
+                dif.compute(dx, (key, val) -> {
+                    if (val == null)
+                        val = new LinkedList<>();
+                    val.add(node);
+                    return val;
+                });
+
+                stations.add(String.valueOf((int) entry[1]));
                 nk[0]--;
             }
         }
@@ -102,5 +160,22 @@ public class Main {
         int n = Integer.parseInt(nk[0]);
         int k = Integer.parseInt(nk[1]);
         return List.of(n, k);
+    }
+
+    public static void main(String[] args) {
+        TreeMap<Integer, String> map = new TreeMap<>();
+
+        map.put(1, "a");
+        map.put(2, "b");
+        map.put(3, "c");
+        map.put(4, "d");
+
+//        System.out.println(map.entrySet().iterator().next().getKey());
+        Map.Entry entry = map.entrySet().iterator().next();
+        System.out.println(entry.getKey() + " " + entry.getValue());
+        map.remove(entry.getKey());
+        map.put(5, "e");
+        entry = map.entrySet().iterator().next();
+        System.out.println(entry.getKey() + " " + entry.getValue());
     }
 }
