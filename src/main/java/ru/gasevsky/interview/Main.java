@@ -161,21 +161,4 @@ public class Main {
         int k = Integer.parseInt(nk[1]);
         return List.of(n, k);
     }
-
-    public static void main(String[] args) {
-        TreeMap<Integer, String> map = new TreeMap<>();
-
-        map.put(1, "a");
-        map.put(2, "b");
-        map.put(3, "c");
-        map.put(4, "d");
-
-//        System.out.println(map.entrySet().iterator().next().getKey());
-        Map.Entry entry = map.entrySet().iterator().next();
-        System.out.println(entry.getKey() + " " + entry.getValue());
-        map.remove(entry.getKey());
-        map.put(5, "e");
-        entry = map.entrySet().iterator().next();
-        System.out.println(entry.getKey() + " " + entry.getValue());
-    }
 }
